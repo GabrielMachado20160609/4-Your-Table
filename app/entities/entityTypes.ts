@@ -5,6 +5,7 @@ export type User = {
 }
 
 export type UserInfo = {
+    id: string;
     companyId: string;
     name: string;
     image: string | null;

@@ -21,7 +21,7 @@ const useUserRepository = (): UserRepository => {
         try {
             const userDocRef = doc(db, 'user', id);
             const userSnap = await getDoc(userDocRef);
-            if(userSnap.exists()) {
+            if (userSnap.exists()) {
                 return userSnap.data() as UserInfo;
             }
             else {
@@ -33,30 +33,18 @@ const useUserRepository = (): UserRepository => {
         }
     }, [])
 
-    const addUser = useCallback(async (admin: UserInfo, adminPassword: string, newUser: UserInfo, password: string,): Promise< string | null> => {
+    const addUser = useCallback(async (newUser: Omit<UserInfo, "id">, password: string,): Promise<boolean> => {
         try {
-            let admEmail = admin.email;
-
-            const userCredential = await createUserWithEmailAndPassword(auth, newUser.email, password);
-            const createdUser = userCredential.user;
+            const newUserCredential = await createUserWithEmailAndPassword(auth, newUser.email, password);
+            const createdUser = newUserCredential.user;
 
             const userDocRef = doc(collection(db, 'user'), createdUser.uid)
             await setDoc(userDocRef, newUser);
 
-            await logout();
-            let logged = await loginWithEmail(admEmail, adminPassword)
-            let token = logged?.token
-
-            if(token?.length) {
-                return token;
-            }
-
-            else {
-                return null
-            }
+            return true;
         }
         catch (e) {
-            return null;
+            return false;
         }
     }, [])
 
@@ -66,22 +54,28 @@ const useUserRepository = (): UserRepository => {
             await updateDoc(userDocRef, updatedUser);
             return true
         }
-        catch(e) {
+        catch (e) {
             return false
         }
     }, [])
 
-    const loginWithEmail = useCallback(async (email: string, password: string): Promise<{token: string, userInfo: UserInfo | null}> => {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        const user = userCredential.user;
-        const userInfo = await getUserById(user.uid);
-
-        const token = await user.getIdToken();
-        
-        return { token, userInfo }
+    const loginWithEmail = useCallback(async (email: string, password: string): Promise<{ token: string, userInfo: UserInfo | null, userCredential: any } | null> => {
+        try {
+            const userCredential = await signInWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+    
+            const userInfo = await getUserById(user.uid);
+            const token = await user.getIdToken();
+    
+            //remover esse userCredential
+            return { token, userInfo, userCredential }
+        }
+        catch(e) {
+            return null
+        }
     }, [])
 
-    const logout = useCallback(async () => {
+    const logoutCurrentUser = useCallback(async () => {
         await signOut(auth);
     }, [])
 
@@ -91,7 +85,7 @@ const useUserRepository = (): UserRepository => {
         addUser,
         updateUser,
         loginWithEmail,
-        logout
+        logoutCurrentUser
     }
 }
 

@@ -6,10 +6,11 @@ export type SetState<T> = Dispatch<SetStateAction<T>>;
 export type UserRepository = {
     getUserById(userId: string): Promise<UserInfo | null>;
     getAllCompanyUsers(companyId: string): Promise<UserInfo[]>;
-    addUser(admin: UserInfo, adminPassword: string, newUser: UserInfo, password: string): Promise<string | null>;
+    addUser(newUser: Omit<UserInfo, "id">, password: string): Promise<boolean>;
     updateUser(id: string, updatedUser: Partial<UserInfo>): Promise<boolean>;
-    loginWithEmail(email: string, password: string): Promise<{ token: string, userInfo: UserInfo | null }>;
-    logout(): void;
+    //remover o userCredential do loginWithEmail
+    loginWithEmail(email: string, password: string): Promise<{ token: string, userInfo: UserInfo | null, userCredential: any } | null>;
+    logoutCurrentUser(): void;
 }
 
 export type AuthContextStructure = {
